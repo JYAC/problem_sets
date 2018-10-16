@@ -274,8 +274,8 @@ Now we're finally able to reproduce Fig. 2 from Tamir et al., we just need to ge
 performance_diff_summary_d = performance_diff_d %>%
   group_by(ConfrontationalGame, MusicCondition) %>%
   summarise(MeanImprovementScore = mean(ImprovementScore, na.rm=TRUE), 
-            lowerSEM = MeanImprovementScore - (0.5*(sd(ImprovementScore, na.rm=TRUE)/sqrt(length(ImprovementScore)))), 
-            upperSEM = MeanImprovementScore + (0.5*(sd(ImprovementScore, na.rm=TRUE)/sqrt(length(ImprovementScore)))))
+            lowerSEM = MeanImprovementScore - (sd(ImprovementScore, na.rm=TRUE)/sqrt(length(ImprovementScore))), 
+            upperSEM = MeanImprovementScore + (sd(ImprovementScore, na.rm=TRUE)/sqrt(length(ImprovementScore))))
 ```
 
 Let's take a look at your result (if it has `NA` values, how can you fix it?):
