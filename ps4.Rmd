@@ -9,7 +9,7 @@ output:
 
 This is problem set #3, in which we want you to integrate your knowledge of data wrangling with some basic simulation skills and some linear modeling.
 
-For ease of reading, please separate your answers from our text by marking our text with the `>` character (indicating quotes). 
+For ease of reading, please separate your answers from our text by marking your text with the `>` character (indicating quotes). 
 
 ```{r}
 library(tidyverse)
@@ -20,11 +20,20 @@ Let's start by convincing ourselves that t-tests have the appropriate false posi
 First do this using a `for` loop.
 
 ```{r}
+p <- numeric(10000) #Create empty vector
+
+for (i in 1:10000) { #Run 10,000 times
+  p[i] <- t.test(rnorm(30))$p.value < 0.05 #Conduct t.test and record p value
+}
+
+sum(p)/10000 #Calculate proportion of 10,000 trials that were significant
 ```
 
 Next, do this using the `replicate` function:
 
 ```{r}
+p <- replicate(10000, t.test(rnorm(30))$p.value < 0.05) #Run t.test 10,000 times
+sum(p)/10000 #Calculate proportion of 10,000 trials that were significant
 ```
 
 Ok, that was a bit boring. Let's try something more interesting - let's implement a p-value sniffing simulation, in the style of Simons, Nelson, & Simonsohn (2011).
@@ -35,17 +44,26 @@ First, write a function that implements this sampling regime.
 
 ```{r}
 double.sample <- function () {
+  x <- rnorm(30)
+  sig <- t.test(x)$p.value 
+  if (sig <.25 & sig > .05) {
+  new <- c(x,rnorm(30))
+  sig <- t.test(new)$p.value
+  }
+  return(sig) #Output the p value
 }
 ```
 
 Now call this function 10k times and find out what happens. 
 
 ```{r}
+output <- replicate(10000, double.sample()<0.05)
+sum(output)/10000
 ```
 
 Is there an inflation of false positives? How bad is it?
 
-> ANSWER
+> Yes, there is an inflation of false positives: now the actual Type 1 Error Rate is around 0.07 (higher than 0.05). 
 
 Now modify this code so that you can investigate this "double the sample" rule in a bit more depth. Let's see what happens when you double the sample ANY time p > .05 (not just when p < .25), or when you do it only if p < .5 or < .75. How do these choices affect the false positive rate?
 
@@ -54,8 +72,30 @@ HINT: Try to do this by making the function `double.sample` take the upper p val
 HINT 2: You may need more samples. Find out by looking at how the results change from run to run.
 
 ```{r}
+double.sample <- function (max) { #Make upper p value an argument 
+  x <- rnorm(30)
+  sig <- t.test(x)$p.value 
+  if (sig < max & sig > .05) { #The argument "max" goes into the boolean
+  new <- c(x,rnorm(30))
+  sig <- t.test(new)$p.value
+  }
+  return(sig) #Output the p value
+}
+
+#What happens when you double the sample ANY time p > .05
+output1 <- replicate(100000, double.sample(1)<0.05)
+sum(output1)/100000
+
+#What happens when you double the sample only if p < .5 
+output2 <- replicate(100000, double.sample(.5)<0.05)
+sum(output2)/100000
+
+#What happens when you double the sample only if p < .75
+output3 <- replicate(100000, double.sample(.75)<0.05)
+sum(output3)/100000
+
 ```
 
 What do you conclude on the basis of this simulation? How bad is this kind of data-dependent policy?
 
-> ANSWER
+> These simulations indicate that the Type 1 error rate will get inflated beyond 5% if you decide whether or not to continue sampling based on the p-value you initially obtain. The looser the condition is for resampling (p is between 0.05 ~ 1 vs. p is between 0.05 vs. 0.25), the more inflated the alpha error rate will be. While these "data-dependent policies" may not seem catastrophic individually, if many people are doing them, they will cumulatively lead to (and *have* led to) pretty severe ramifications for the field.
